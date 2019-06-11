@@ -57,7 +57,7 @@ export default {
 
       for (let emissionName of EMISSION_NAMES) {
         options[emissionName] = (...args) => {
-          this.$emit(emissionName, ...args)
+          this.$emit(emissionName.replace(/([A-Z])/g, m => '-' + m.toLowerCase()), ...args)
         }
       }
 

@@ -1,5 +1,5 @@
 /*
-FullCalendar Vue Component v4.2.2
+FullCalendar Vue Component v4.3.1
 Docs: https://fullcalendar.io/docs/vue
 License: MIT
 */
@@ -300,10 +300,12 @@ License: MIT
     props: PROP_DEFS,
     // INTERNALS
     // this.$options.calendar
+    // this.$options.deepCopies - all current deep options
     // this.$options.dirtyOptions - null/undefined means nothing dirty
     data: function data() {
       return {
-        renderId: 0
+        renderId: 0,
+        deepCopies: {}
       };
     },
     render: function render(createElement) {
@@ -316,7 +318,7 @@ License: MIT
     },
     mounted: function mounted() {
       warnDeprecatedListeners(this.$listeners);
-      this.$options.calendar = new core.Calendar(this.$el, this.buildOptions());
+      this.$options.calendar = new core.Calendar(this.$el, this.buildCalendarOptions());
       this.$options.calendar.render();
     },
     beforeUpdate: function beforeUpdate() {
@@ -327,7 +329,7 @@ License: MIT
     },
     watch: mapHash(PROP_DEFS, buildPropWatcher),
     methods: {
-      buildOptions: function buildOptions() {
+      buildCalendarOptions: function buildCalendarOptions() {
         var _this = this;
 
         var options = {};
@@ -373,7 +375,13 @@ License: MIT
           var propVal = this[propName]; // protect against FullCalendar choking on undefined options
 
           if (propVal !== undefined) {
-            options[propName] = PROP_IS_DEEP[propName] ? deepCopy(propVal) : propVal;
+            if (PROP_IS_DEEP[propName]) {
+              propVal = deepCopy(propVal); // freeze state
+
+              this.deepCopies[propName] = propVal; // side effect!
+            }
+
+            options[propName] = propVal;
           }
         }
 
@@ -404,7 +412,16 @@ License: MIT
         deep: true,
         // listen to children as well
         handler: function handler(newVal) {
-          this.recordDirtyOption(propName, deepCopy(newVal));
+          // use this instead of the handler's param because if same reference, will always be equal
+          var oldVal = this.deepCopies[propName];
+
+          if (!fastDeepEqual(newVal, oldVal)) {
+            newVal = deepCopy(newVal); // freeze state
+
+            this.deepCopies[propName] = newVal; // always keep this up to date
+
+            this.recordDirtyOption(propName, newVal);
+          }
         }
       };
     } else {

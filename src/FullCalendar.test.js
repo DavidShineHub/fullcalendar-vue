@@ -33,13 +33,12 @@ it('handles a single prop change', function() {
 necessary to test copy util
 */
 it('renders events with Date objects', function() {
-  let nowDate = new Date()
   let wrapper = mount(FullCalendar, {
     propsData: {
       ...DEFAULT_PROPS,
       events: [
-        { title: 'event', start: nowDate },
-        { title: 'event', start: nowDate }
+        { title: 'event', start: DEFAULT_PROPS.defaultDate },
+        { title: 'event', start: DEFAULT_PROPS.defaultDate }
       ]
     }
   })
@@ -131,8 +130,48 @@ it('should expose an API', function() {
 })
 
 
+const COMPONENT_FOR_API = {
+  components: {
+    FullCalendar
+  },
+  template: `
+    <div>
+      <FullCalendar
+        :plugins='calendarPlugins'
+        defaultDate='${DEFAULT_PROPS.defaultDate}'
+        defaultView='${DEFAULT_PROPS.defaultView}'
+        timeZone='${DEFAULT_PROPS.timeZone}'
+        ref='fullCalendar'
+      />
+    </div>
+  `,
+  data() {
+    return {
+      calendarPlugins: DEFAULT_PROPS.plugins
+    }
+  },
+  methods: {
+    gotoDate(newDate) {
+      let calendarApi = this.$refs.fullCalendar.getApi()
+      calendarApi.gotoDate(newDate)
+    },
+    getDate() {
+      let calendarApi = this.$refs.fullCalendar.getApi()
+      return calendarApi.getDate()
+    }
+  }
+}
+
+it('should expose an API in $refs', function() {
+  let wrapper = mount(COMPONENT_FOR_API)
+  let newDate = new Date(Date.UTC(2000, 0, 1))
+
+  wrapper.vm.gotoDate(newDate)
+  expect(wrapper.vm.getDate().valueOf()).toBe(newDate.valueOf())
+})
+
+
 // toolbar/event non-reactivity
-// (Vue naturally won't recompute bound props that don't have dependencies)
 
 const BORING_COMPONENT = {
   props: [ 'calendarViewSkeletonRender', 'calendarEventRender' ],
@@ -148,7 +187,7 @@ const BORING_COMPONENT = {
         timeZone='${DEFAULT_PROPS.timeZone}'
         :plugins='calendarPlugins'
         :height='calendarHeight'
-        :toolbar='buildToolbar()'
+        :header='buildToolbar()'
         :events='buildEvents(1)'
         :viewSkeletonRender='calendarViewSkeletonRender'
         :eventRender='calendarEventRender'

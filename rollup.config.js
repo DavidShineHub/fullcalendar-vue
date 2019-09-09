@@ -12,8 +12,6 @@ if (!/^(development|production)$/.test(process.env.BUILD)) {
   isDev = process.env.BUILD === 'development'
 }
 
-let sourcemap = isDev ? 'inline' : false
-
 const BROWSER_GLOBAL = 'FullCalendarVue'
 const EXTERNAL_BROWSER_GLOBALS = {
   '@fullcalendar/core': 'FullCalendar'
@@ -30,13 +28,13 @@ const OUTPUT_SETTINGS = {
     name: BROWSER_GLOBAL,
     globals: EXTERNAL_BROWSER_GLOBALS,
     banner: buildBanner,
-    sourcemap
+    sourcemap: isDev
   },
   esm: {
     format: 'es',
     file: 'dist/main.esm.js',
     banner: buildBanner,
-    sourcemap
+    sourcemap: isDev
   }
 }
 
@@ -54,7 +52,7 @@ function buildSettings(format) {
     plugins.push(
       nodeResolve({ jail: 'src' }) // any files outside of here are considered external libs
     )
-  } else {
+  } else { // will bundle small dependencies like fast-deep-equal
     plugins.push(
       nodeResolve()
     )
